@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-iptables --append INPUT --protocol tcp -m multiport --destination-ports 80,443 --jump DROP
-
 # Cloudflare IP Ranges
 # Last updated: April 8, 2021
 
@@ -20,3 +18,6 @@ iptables --append INPUT --protocol tcp --source 104.16.0.0/13 -m multiport --des
 iptables --append INPUT --protocol tcp --source 104.24.0.0/14 -m multiport --destination-ports 80,443 --jump ACCEPT
 iptables --append INPUT --protocol tcp --source 172.64.0.0/13 -m multiport --destination-ports 80,443 --jump ACCEPT
 iptables --append INPUT --protocol tcp --source 131.0.72.0/22 -m multiport --destination-ports 80,443 --jump ACCEPT
+
+iptables --append INPUT --protocol tcp -m multiport --destination-ports 80,443 --jump DROP
+
