@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "**/backend/proxy/nginx/conf.d/*": "nginx",
+        "**/backend/proxy/nginx/unuse.conf.d/*": "nginx",
+        "**/backend/proxy/nginx/sites-config/*": "nginx"
+    }
+}
