@@ -1,4 +1,7 @@
 {
+    "rust-analyzer.linkedProjects": [
+        "./backend/link.noonomyen.com/Cargo.toml"
+    ],
     "files.associations": {
         "**/backend/proxy/nginx/conf.d/*": "nginx",
         "**/backend/proxy/nginx/unuse.conf.d/*": "nginx",
