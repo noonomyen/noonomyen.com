@@ -7,7 +7,8 @@ server {
 }
 
 upstream backend_link_redirect_service {
-    server 127.0.0.1:8002;
+    # server 127.0.0.1:8002;
+    server unix:/tmp/redirect-server.sock;
 }
 
 server {
