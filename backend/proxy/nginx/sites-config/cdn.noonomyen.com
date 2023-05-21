@@ -25,7 +25,7 @@ server {
     gzip_proxied no-cache no-store private expired auth;
 
     root /server/frontend/cdn.noonomyen.com;
-    autoindex off;
+    autoindex on;
 
     location / {
         add_header Cache-Control "public, must-revalidate, max-age=3600, no-transform";
