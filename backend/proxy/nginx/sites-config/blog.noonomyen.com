@@ -21,5 +21,5 @@ server {
     location / {
         add_header Content-Type text/plain;
         return 200 'coming soon ^_^';
-    };
+    }
 }
