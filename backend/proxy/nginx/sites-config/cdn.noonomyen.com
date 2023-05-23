@@ -22,9 +22,7 @@ server {
     gzip_comp_level 5;
     gzip_min_length 256;
     gzip_vary on;
-    gzip_proxied any;
-    gzip_types text/html
-               text/richtext
+    gzip_types text/richtext
                text/plain
                text/css
                text/x-script
@@ -81,8 +79,8 @@ server {
     }
 
     location /error-page/ {
-        add_header Cache-Control "max-age=86400, s-maxage=86400, no-transform, stale-while-revalidate=3600, stale-if-error=3600";
+        add_header Cache-Control "public, max-age=86400, s-maxage=86400, no-transform, stale-while-revalidate=3600, stale-if-error=3600";
         add_header Cloudflare-CDN-Cache-Control "max-age=86400, stale-if-error=3600";
         add_header CDN-Cache-Control "max-age=86400, stale-if-error=3600";
-    };
+    }
 }
