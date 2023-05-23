@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link class="__BUILD_replace" href="../../cdn.noonomyen.com/submodule/Font-Awesome/css/all.css" rel="stylesheet"
+            __REPLACE="href=https://cdn.noonomyen.com/fontawesome-free/6.4.0/css/all.min.css">
+        <link class="__BUILD_tailwindcss" href="../dist/page.tailwind.css" rel="stylesheet">
+        <title>ERROR PAGE</title>
+    </head>
+    <body class="bg-red-50 m-10 break-all font-mono">
+        <div class="flex flex-row items-center ml-5">
+            <div class="text-[160px] font-thin -mt-12 tracking-widest whitespace-nowrap select-none font-sans">:(</div>
+            <div class="ml-10">
+                <div class="text-0 [&>*]:text-5xl">
+                    <i id="client-icon" class="fa-solid fa-user hidden"></i>
+                    <i id="server-icon" class="fa-solid fa-server hidden"></i>
+                    <i id="error-icon" class="fa-solid fa-circle-exclamation hidden"></i>
+                    <span class="ml-5">Error</span>
+                </div>
+                <div class="text-0 mt-5 [&>*]:text-5xl">
+                    <span id="status"></span>
+                    <span id="status-name" class="ml-5"></span>
+                </div>
+            </div>
+        </div>
+        <div class="m-8 mt-5 text-xl">
+            <table>
+                <tr>
+                    <td class="pr-2">Server time:</td>
+                    <td id="server-time"><!--#config timefmt="%Y-%m-%d %H:%M:%S %Z" --><!--#echo var="date_local" --></td>
+                </tr>
+                <tr>
+                    <td class="pr-2">Client time:</td>
+                    <td id="client-time"></td>
+                </tr>
+            </table>
+            <div class="whitespace-nowrap w-full mt-3">
+                <div class="inline-block align-top" >URL: </div>
+                <div class="inline-block whitespace-normal break-all w-auto" id="URL"></div>
+            </div>
+            <p>Your IP: <span id="your-ip"><!--#echo var="remote_addr" --></span></p>
+            <p>Ray ID: <span id="your-ip"><!--#echo var="http_cf_ray" --></span></p>
+        </div>
+        <script class="__BUILD_javascript" src="../dist/page.js"></script>
+    </body>
+</html>
