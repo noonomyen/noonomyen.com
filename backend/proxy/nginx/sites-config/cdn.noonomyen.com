@@ -22,6 +22,7 @@ server {
     gzip_comp_level 5;
     gzip_min_length 256;
     gzip_vary on;
+    # https://developers.cloudflare.com/support/speed/optimization-file-size/what-will-cloudflare-compress
     gzip_types text/richtext
                text/plain
                text/css
