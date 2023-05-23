@@ -21,6 +21,8 @@ server {
     ssl_protocols TLSv1.3;
     ssl_prefer_server_ciphers off;
 
+    include /server/proxy/share-sites-config/error-page.conf;
+
     location / {
         proxy_pass http://backend_link_redirect_service;
     }

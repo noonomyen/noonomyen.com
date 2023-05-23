@@ -72,6 +72,9 @@ server {
 
     root /server/frontend/cdn.noonomyen.com;
     autoindex on;
+    add_header Access-Control-Allow-Origin "*";
+
+    include /server/proxy/share-sites-config/error-page.conf;
 
     location / {
         add_header Cache-Control "public, max-age=604800, s-maxage=604800, no-transform, stale-while-revalidate=86400, stale-if-error=86400";

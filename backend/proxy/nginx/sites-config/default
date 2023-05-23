@@ -3,6 +3,8 @@ server {
     listen [::]:80 default_server;
     server_name _;
 
+    include /server/proxy/share-sites-config/error-page.conf;
+
     return 502;
 }
 
@@ -15,6 +17,8 @@ server {
     ssl_certificate_key /etc/ssl/noonomyen.com/private-key.pem;
     ssl_protocols TLSv1.3;
     ssl_prefer_server_ciphers off;
+
+    include /server/proxy/share-sites-config/error-page.conf;
 
     return 502;
 }

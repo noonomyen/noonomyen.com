@@ -16,6 +16,10 @@ server {
     ssl_protocols TLSv1.3;
     ssl_prefer_server_ciphers off;
 
-    add_header Content-Type text/plain;
-    return 200 'coming soon ^_^';
+    include /server/proxy/share-sites-config/error-page.conf;
+
+    location / {
+        add_header Content-Type text/plain;
+        return 200 'coming soon ^_^';
+    };
 }
