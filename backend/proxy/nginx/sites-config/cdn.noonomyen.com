@@ -72,17 +72,18 @@ server {
 
     root /server/frontend/cdn.noonomyen.com;
     autoindex on;
-    add_header Access-Control-Allow-Origin "*";
 
     include /server/proxy/share-sites-config/error-page.conf;
 
     location / {
+        add_header Access-Control-Allow-Origin "*";
         add_header Cache-Control "public, max-age=604800, s-maxage=604800, no-transform, stale-while-revalidate=86400, stale-if-error=86400";
         add_header Cloudflare-CDN-Cache-Control "max-age=604800, stale-if-error=86400";
         add_header CDN-Cache-Control "max-age=604800, stale-if-error=86400";
     }
 
     location /error-page/ {
+        add_header Access-Control-Allow-Origin "*";
         add_header Cache-Control "public, max-age=86400, s-maxage=86400, no-transform, stale-while-revalidate=3600, stale-if-error=3600";
         add_header Cloudflare-CDN-Cache-Control "max-age=86400, stale-if-error=3600";
         add_header CDN-Cache-Control "max-age=86400, stale-if-error=3600";
