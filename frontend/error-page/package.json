@@ -9,11 +9,14 @@
     "dev.ts.start": "npx nodemon --watch ./src/page.ts --exec npx tsc --project ./src/tsconfig.json"
   },
   "dependencies": {
+    "@types/html-minifier": "^4.0.2",
     "@types/node": "^20.2.3",
     "cheerio": "^1.0.0-rc.12",
+    "html-minifier": "^4.0.0",
     "nodemon": "^2.0.22",
     "tailwindcss": "^3.3.2",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "uglify-js": "^3.17.4"
   }
 }

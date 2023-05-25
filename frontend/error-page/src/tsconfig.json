@@ -5,7 +5,7 @@
     "lib": ["es6", "dom"],
     "allowJs": false,
     "checkJs": false,
-    "outDir": "../dist",
+    "outDir": "../tmp/js",
     "removeComments": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

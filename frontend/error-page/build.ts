@@ -1,97 +1,210 @@
+console.time("Build time");
+
 import { argv } from "node:process";
 import { createHash, randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSync, existsSync } from "node:fs";
-import { join as pathJoin } from "node:path";
-import { execSync } from "node:child_process";
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSync, existsSync, renameSync, lstatSync, unlinkSync, rmdirSync, mkdir } from "node:fs";
+import { join as pathJoin, basename } from "node:path";
+import { exec } from "node:child_process";
 
-import { load as HTMLLoad, Element as HTMLElement } from "cheerio";
+import { load as HTMLLoad, Element as HTMLElement, CheerioAPI } from "cheerio";
+import { minify } from "html-minifier";
 
 let RELEASE = false;
 if (argv.indexOf("--release") != -1) {
     RELEASE = true;
 };
 
-console.time("Build time");
-
-if (!existsSync("./build")) {
-    mkdirSync("./build");
-};
-
-execSync("npx tsc --project ./src/tsconfig.json");
-const hash_js = createHash("md5");
-hash_js.update(readFileSync("./dist/page.js"));
-let js_name = hash_js.digest("hex") + ".js";
-copyFileSync("./dist/page.js", pathJoin("./build", js_name));
-
-execSync("npx tailwindcss --input ./src/tailwind-directives.css --output ./dist/page.tailwind.css --config ./tailwind.config.js");
-const hash_css = createHash("md5");
-hash_css.update(readFileSync("./dist/page.tailwind.css"));
-let css_name = hash_css.digest("hex") + ".css";
-copyFileSync("./dist/page.tailwind.css", pathJoin("./build", css_name));
-
-const $ = HTMLLoad(readFileSync("./src/page.html"), { decodeEntities: true });
-
-const RemoveClass = (arr: string, item: string): string => {
-    return arr.split(" ").filter((value: string) => {
-        return value != item;
-    }).join(" ");
-};
-
-for (let element of $(".__BUILD_replace")) {
-    let __replace = (element as HTMLElement).attribs["__replace"];
-    if (__replace) {
-        try {
-            let spilt_point = __replace.indexOf("=");
-            (element as HTMLElement).attribs[__replace.slice(0, spilt_point)] = __replace.slice(spilt_point + 1);
-            let _class =  RemoveClass((element as HTMLElement).attribs["class"], "__BUILD_replace");
-            if (_class == "") {
-                delete (element as HTMLElement).attribs["class"];
-            } else {
-                (element as HTMLElement).attribs["class"] = _class;
-            };
-            delete (element as HTMLElement).attribs["__replace"];
-        } catch {
-            console.trace("__BUILD_replace: replace error");
+const rmSubDir = (dir: string) => {
+    readdirSync(dir).forEach((file) => {
+        const target = pathJoin(dir, file);
+        const stat_ = lstatSync(target);
+        if (stat_.isDirectory()) {
+            rmSubDir(target);
+            rmdirSync(target);
+        } else if (stat_.isFile()) {
+            rmSync(target);
+        } else if (stat_.isSymbolicLink()) {
+            unlinkSync(target);
+        } else {
+            throw new Error(`Can't delete: ${target}`);
         };
-    } else {
-        console.trace("__BUILD_replace: not found attribute '__replace'");
+    });
+};
+
+// const RemoveClass = (arr: string, item: string): string => {
+//     return arr.split(" ").filter((value: string) => {
+//         return value != item;
+//     }).join(" ");
+// };
+
+if (!existsSync("./build")) { mkdirSync("./build") } else { rmSubDir("./build") };
+if (!existsSync("./tmp")) { mkdirSync("./tmp") } else { rmSubDir("./tmp") };
+mkdirSync("./tmp/js");
+
+Promise.all([
+    new Promise<{ [key: string]: string }>((resolve, reject) => {
+        console.time("TypeScript build time");
+
+        exec("npx tsc --project ./src/tsconfig.json", (error, stdout) => {
+            if (error) {
+                reject(error);
+            } else {
+                if (stdout) { console.log(stdout) };
+                let outfiles: { [key: string]: string } = {};
+
+                Promise.all<null>(readdirSync("./tmp/js").map((file) => {
+                    return new Promise((_resolve, _reject) => {
+                        if (RELEASE) {
+                            const target = pathJoin("./build/", file);
+                            exec(`npx uglifyjs --compress --output ${target} -- ${pathJoin("./tmp/js", file)}`, (error, stdout) => {
+                                if (error) {
+                                    _reject(error);
+                                } else {
+                                    if (stdout) { console.log(stdout) };
+                                    const hash_js = createHash("md5");
+                                    hash_js.update(readFileSync(target));
+                                    let outfile = hash_js.digest("hex") + ".js";
+                                    renameSync(target, pathJoin("./build", outfile));
+                                    outfiles[file] = outfile;
+                                    _resolve(null);
+                                };
+                            });
+                        } else {
+                            const target = pathJoin("./tmp/js", file);
+                            const hash_js = createHash("md5");
+                            hash_js.update(readFileSync(target));
+                            let outfile = hash_js.digest("hex") + ".js";
+                            copyFileSync(target, pathJoin("./build", outfile));
+                            outfiles[file] = outfile;
+                            _resolve(null);
+                        };
+                    });
+                })).then(() => {
+                    console.timeEnd("TypeScript build time");
+                    resolve(outfiles);
+                }).catch(reject);
+            };
+        });
+    }),
+    new Promise<string>((resolve, reject) => {
+        console.time("Tailwind CSS build time");
+        const target = "./tmp/page.tailwind.css";
+        const command = `npx tailwindcss --input ./src/tailwind-directives.css --output ${target} --config ./tailwind.config.js${RELEASE ? ' --minify' : ''}`;
+        exec(command, (error, stdout) => {
+            if (error) {
+                reject(error);
+            } else {
+                if (stdout) { console.log(stdout) };
+                const hash_css = createHash("md5");
+                hash_css.update(readFileSync(target));
+                let css_name = hash_css.digest("hex") + ".css";
+                copyFileSync(target, pathJoin("./build", css_name));
+                console.timeEnd("Tailwind CSS build time");
+                resolve(css_name);
+            };
+        });
+    }),
+    new Promise<CheerioAPI>((resolve, reject) => {
+        console.time("HTML load & replace (__replace attribute) time");
+
+        const $ = HTMLLoad(readFileSync("./src/page.html"));
+
+        for (const __element of $(".__BUILD_replace")) {
+            // let __replace = (element as HTMLElement).attribs["__replace"];
+            const element = $(__element);
+            const __replace = element.attr("__replace");
+            if (__replace) {
+                try {
+                    let spilt_point = __replace.indexOf("=");
+                    // (element as HTMLElement).attribs[__replace.slice(0, spilt_point)] = __replace.slice(spilt_point + 1);
+                    // let _class =  RemoveClass((element as HTMLElement).attribs["class"], "__BUILD_replace");
+                    // if (_class == "") {
+                    //     delete (element as HTMLElement).attribs["class"];
+                    // } else {
+                    //     (element as HTMLElement).attribs["class"] = _class;
+                    // };
+                    // delete (element as HTMLElement).attribs["__replace"];
+
+                    element.attr(__replace.slice(0, spilt_point), __replace.slice(spilt_point + 1));
+                    element.removeClass("__BUILD_replace");
+                    if (element.attr("class") == "") {
+                        element.removeAttr("class");
+                    };
+                } catch {
+                    reject(new Error("__BUILD_replace: replace error"))
+                };
+            } else {
+                reject(new Error("__BUILD_replace: replace error, __replace attribute not found"));
+            };
+        };
+
+        console.timeEnd("HTML load & replace (__replace attribute) time");
+        resolve($);
+    })
+]).then((results) => {
+    console.time("HTML replace source link time");
+    const [js_files, css_name, $] = results;
+
+    let from = "/";
+    if (RELEASE) {
+        from = "https://cdn.noonomyen.com/error-page/"
     };
-};
 
-let js = $(".__BUILD_javascript");
-if (RELEASE) {
-    js.attr("src", "https://cdn.noonomyen.com/error-page/" + js_name);
-} else {
-    js.attr("src", "/" + js_name);
-};
-js.removeClass("__BUILD_javascript");
-if (js.attr("class") == "") {
-    js.removeAttr("class");
-};
+    // for (const element of $(".__BUILD_javascript")) {
+    //     (element as HTMLElement).attribs["src"] = from + js_files[basename((element as HTMLElement).attribs["src"])];
+    //     let _class =  RemoveClass((element as HTMLElement).attribs["class"], "__BUILD_javascript");
+    //     if (_class == "") {
+    //         delete (element as HTMLElement).attribs["class"];
+    //     } else {
+    //         (element as HTMLElement).attribs["class"] = _class;
+    //     };
+    // };
 
-let css = $(".__BUILD_tailwindcss");
-if (RELEASE) {
-    css.attr("href", "https://cdn.noonomyen.com/error-page/" + css_name);
-} else {
-    css.attr("href", "/" + css_name);
-};
-css.removeClass("__BUILD_tailwindcss");
-if (css.attr("class") == "") {
-    css.removeAttr("class");
-};
+    for (const __element of $(".__BUILD_javascript")) {
+        let element = $(__element)
+        const src = element.attr("src");
+        if (src) {
+            element.attr("src", from + js_files[basename(src)]);
+            element.removeClass("__BUILD_javascript");
+            if (element.attr("class") == "") {
+                element.removeAttr("class");
+            };
+        } else {
+            throw new Error("__BUILD_javascript: replace error, attribute src not found");
+        };
+    };
 
-const hash_random = createHash("sha256");
-hash_random.update(randomBytes(256));
-const temp_title_name = hash_random.digest("hex");
-$("html head title").replaceWith(`<title>${temp_title_name}</title>`);
+    {
+        const element = $(".__BUILD_tailwindcss");
+        element.attr("href", from + css_name);
+        element.removeClass("__BUILD_tailwindcss");
+        if (element.attr("class") == "") {
+            element.removeAttr("class");
+        };
+    };
 
-const out_html = $.html();
-writeFileSync("build/internal.error-page.html", out_html.replace(`<title>${temp_title_name}</title>`, "<title><!--#echo var=\"status\" --></title>"));
+    const hash_random = createHash("sha256");
+    hash_random.update(randomBytes(256));
+    const temp_title_name = hash_random.digest("hex");
+    $("html head title").replaceWith(`<title>${temp_title_name}</title>`);
 
-readdirSync("build").forEach((file) => {
-    if (!((file == js_name) || (file == css_name) || (file == "internal.error-page.html"))) {
-        rmSync(pathJoin("./build", file));
-    }
+    let out_html = $.html().replace(`<title>${temp_title_name}</title>`, "<title><!--#echo var=\"status\" --></title>");
+
+    if (RELEASE) {
+        out_html = minify(out_html, {
+            removeAttributeQuotes: true,
+            removeComments: false,
+            sortClassName: true,
+            sortAttributes: true,
+            collapseWhitespace: true
+        });
+    };
+
+    writeFileSync("./build/internal.error-page.html", out_html);
+
+    console.timeEnd("HTML replace source link time");
+    console.log("");
+    console.timeEnd("Build time");
+}).catch((error) => {
+    throw error;
 });
-
-console.timeEnd("Build time");
