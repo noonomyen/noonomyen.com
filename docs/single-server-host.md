@@ -7,7 +7,7 @@
 | www.noonomyen.com | - | Nginx | redirect to noonomyen.com |
 | status.noonomyen.com | - | - | - |
 | noonomyen.com | - | - | - |
-| link.noonomyen.com | HTTP : 8002 | Rust - Actix Web | - |
+| link.noonomyen.com | HTTP over Unix socket : /tmp/redirect-server.sock | Rust - Actix Web | - |
 | blog.noonomyen.com | - | - | - |
 | cdn.noonomyen.com | - | Nginx | - |
 
@@ -15,20 +15,33 @@
 
 ## Directory structure
 
-Last updated : 2023-05-18
+Last updated : 2023-05-25
 ```
 server
+├── TEST
 ├── backend
 │   └── link.noonomyen.com
 │       ├── list.txt
 │       └── redirect_server
 ├── frontend
-│   └── cdn.noonomyen.com
-│       └── robots.txt
+│   ├── cdn.noonomyen.com
+│   │   ├── error-page
+│   │   │   ├── <hash>.css
+│   │   │   └── <hash>.js
+│   │   ├── fontawesome-free
+│   │   │   └── 6.4.0
+│   │   └── robots.txt
+│   └── error-page
+│       └── internal.error-page.html
 └── proxy
+    ├── conf.d
+    │   ├── cloudflare_real-ip.conf
+    │   └── internal.error-page.conf
     ├── log
     │   ├── access.log
     │   └── error.log
+    ├── share-sites-config
+    │   └── error-page.conf
     ├── sites-available
     │   ├── blog.noonomyen.com
     │   ├── cdn.noonomyen.com

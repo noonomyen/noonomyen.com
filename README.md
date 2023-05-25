@@ -5,6 +5,7 @@
 **In the future this repository may change to private repository.**
 
 - noonomyen.com
+- www.noonomyen.com
 - status.noonomyen.com
 - link.noonomyen.com
 - blog.noonomyen.com
