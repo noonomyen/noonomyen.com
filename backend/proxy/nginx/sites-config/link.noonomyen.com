@@ -20,6 +20,6 @@ server {
     proxy_intercept_errors on;
 
     location / {
-        proxy_pass http://unix:/tmp/redirect-server.sock;
+        proxy_pass http://unix:/run/backend/redirect-server.sock;
     }
 }
