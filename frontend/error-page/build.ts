@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSy
 import { join as pathJoin, basename } from "node:path";
 import { exec } from "node:child_process";
 
-import { load as HTMLLoad, Element as HTMLElement, CheerioAPI } from "cheerio";
+import { load as HTMLLoad, CheerioAPI } from "cheerio";
 import { minify } from "html-minifier";
 
 let RELEASE = false;
@@ -30,12 +30,6 @@ const rmSubDir = (dir: string) => {
         };
     });
 };
-
-// const RemoveClass = (arr: string, item: string): string => {
-//     return arr.split(" ").filter((value: string) => {
-//         return value != item;
-//     }).join(" ");
-// };
 
 if (!existsSync("./build")) { mkdirSync("./build") } else { rmSubDir("./build") };
 if (!existsSync("./tmp")) { mkdirSync("./tmp") } else { rmSubDir("./tmp") };
@@ -110,21 +104,11 @@ Promise.all([
         const $ = HTMLLoad(readFileSync("./src/page.html"));
 
         for (const __element of $(".__BUILD_replace")) {
-            // let __replace = (element as HTMLElement).attribs["__replace"];
             const element = $(__element);
             const __replace = element.attr("__replace");
             if (__replace) {
                 try {
                     let spilt_point = __replace.indexOf("=");
-                    // (element as HTMLElement).attribs[__replace.slice(0, spilt_point)] = __replace.slice(spilt_point + 1);
-                    // let _class =  RemoveClass((element as HTMLElement).attribs["class"], "__BUILD_replace");
-                    // if (_class == "") {
-                    //     delete (element as HTMLElement).attribs["class"];
-                    // } else {
-                    //     (element as HTMLElement).attribs["class"] = _class;
-                    // };
-                    // delete (element as HTMLElement).attribs["__replace"];
-
                     element.attr(__replace.slice(0, spilt_point), __replace.slice(spilt_point + 1));
                     element.removeClass("__BUILD_replace");
                     if (element.attr("class") == "") {
@@ -149,16 +133,6 @@ Promise.all([
     if (RELEASE) {
         from = "https://cdn.noonomyen.com/error-page/"
     };
-
-    // for (const element of $(".__BUILD_javascript")) {
-    //     (element as HTMLElement).attribs["src"] = from + js_files[basename((element as HTMLElement).attribs["src"])];
-    //     let _class =  RemoveClass((element as HTMLElement).attribs["class"], "__BUILD_javascript");
-    //     if (_class == "") {
-    //         delete (element as HTMLElement).attribs["class"];
-    //     } else {
-    //         (element as HTMLElement).attribs["class"] = _class;
-    //     };
-    // };
 
     for (const __element of $(".__BUILD_javascript")) {
         let element = $(__element)
