@@ -1,12 +1,8 @@
 {
-  "name": "error-page",
+  "name": "page-builder",
   "scripts": {
     "build": "npx ts-node --project ./tsconfig.json build.ts",
-    "build.release": "npx ts-node --project ./tsconfig.json build.ts --release",
-    "build.css": "npx tailwindcss --input ./src/tailwind-directives.css --output ./dist/page.tailwind.css --config ./tailwind.config.js",
-    "build.ts": "npx tsc --project ./src/tsconfig.json",
-    "dev.css.start": "npx tailwindcss --input ./src/tailwind-directives.css --output ./dist/page.tailwind.css --config ./tailwind.config.js --watch",
-    "dev.ts.start": "npx nodemon --watch ./src/page.ts --exec npx tsc --project ./src/tsconfig.json"
+    "build.release": "npx ts-node --project ./tsconfig.json build.ts --release"
   },
   "dependencies": {
     "@types/html-minifier": "^4.0.2",

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2022",
     "module": "commonjs",
     "allowJs": true,
     "checkJs": true,
@@ -9,5 +9,8 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "files": [ "./build.ts" ]
+  "files": [
+    "./core.ts",
+    "./build.ts"
+  ]
 }
