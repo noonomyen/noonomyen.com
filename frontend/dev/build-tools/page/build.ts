@@ -15,7 +15,7 @@ if (argv.indexOf("--release") != -1) {
 if (argv.indexOf("target->error-page") != -1) {
     const workspace = "../../../error-page";
     Core.setupBuildDir(workspace);
-    Core.Compile(RELEASE, workspace)
+    Core.AsyncCompile(RELEASE, workspace)
         .then(Core.Target.ERROR_PAGE(RELEASE, workspace))
         .then(end)
         .catch(error);

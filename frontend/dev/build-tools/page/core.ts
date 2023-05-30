@@ -1,13 +1,14 @@
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSync, existsSync, renameSync, lstatSync, unlinkSync, rmdirSync, mkdir } from "node:fs";
 import { join as pathJoin, basename } from "node:path";
-import { exec } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import { chdir, cwd } from "node:process";
 
 import { load as HTMLLoad, CheerioAPI } from "cheerio";
 import { minify } from "html-minifier";
 
-export type CompilePromiseConstructor = Promise<[{ [key: string]: string; }, string, CheerioAPI]>;
+export type AsyncCompilePromiseConstructor = Promise<[{ [key: string]: string; }, string, CheerioAPI]>;
+export type CompilePromiseConstructor = Promise<[{ [key: string]: string }, string, CheerioAPI]>;
 export type CompileResults = [{ [key: string]: string; }, string, CheerioAPI];
 
 export const rmSubDir = (dir: string) => {
@@ -36,53 +37,67 @@ export const setupBuildDir = (workspace: string) => {
     chdir(PWD);
 }
 
-export const Compile = (RELEASE: boolean, workspace: string): CompilePromiseConstructor => {
-    return Promise.all([
-        new Promise<{ [key: string]: string }>((resolve, reject) => {
-            console.time("TypeScript build time");
-    
-            exec(`npx tsc --project ${pathJoin(workspace, './src/tsconfig.json')}`, (error, stdout) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    if (stdout) { console.log(stdout) }
-                    let outfiles: { [key: string]: string } = {}
-    
-                    Promise.all<null>(readdirSync(pathJoin(workspace, "./tmp/js")).map((file) => {
-                        return new Promise((_resolve, _reject) => {
-                            if (RELEASE) {
-                                const target = pathJoin(workspace, "./build/", file);
-                                exec(`npx uglifyjs --compress --output ${target} -- ${pathJoin(workspace ,"./tmp/js", file)}`, (error, stdout) => {
-                                    if (error) {
-                                        _reject(error);
-                                    } else {
-                                        if (stdout) { console.log(stdout) }
-                                        const hash_js = createHash("md5");
-                                        hash_js.update(readFileSync(target));
-                                        let outfile = hash_js.digest("hex") + ".js";
-                                        renameSync(target, pathJoin(workspace, "./build", outfile));
-                                        outfiles[file] = outfile;
-                                        _resolve(null);
-                                    }
-                                });
-                            } else {
-                                const target = pathJoin(workspace, "./tmp/js", file);
-                                const hash_js = createHash("md5");
-                                hash_js.update(readFileSync(target));
-                                let outfile = hash_js.digest("hex") + ".js";
-                                copyFileSync(target, pathJoin(workspace, "./build", outfile));
-                                outfiles[file] = outfile;
-                                _resolve(null);
-                            }
-                        });
-                    })).then(() => {
-                        console.timeEnd("TypeScript build time");
-                        resolve(outfiles);
-                    }).catch(reject);
-                }
-            });
-        }),
-        new Promise<string>((resolve, reject) => {
+export const TSCompile = (RELEASE: boolean, workspace: string): Promise<{ [key: string]: string }> => {
+    return new Promise<{ [key: string]: string }>((resolve, reject) => {
+        console.time("TypeScript build time");
+        exec(`npx tsc --project ${pathJoin(workspace, './src/tsconfig.json')}`, (error, stdout) => {
+            if (error) {
+                reject(error);
+            } else {
+                let outfiles: { [key: string]: string } = {}
+                Promise.all<null>(readdirSync(pathJoin(workspace, "./tmp/js")).map((file) => {
+                    return new Promise((_resolve, _reject) => {
+                        if (RELEASE) {
+                            const target = pathJoin(workspace, "./build/", file);
+                            exec(`npx uglifyjs --compress --output ${target} -- ${pathJoin(workspace ,"./tmp/js", file)}`, (error, stdout) => {
+                                if (error) {
+                                    _reject(error);
+                                } else {
+                                    const hash_js = createHash("md5");
+                                    hash_js.update(readFileSync(target));
+                                    let outfile = hash_js.digest("hex") + ".js";
+                                    renameSync(target, pathJoin(workspace, "./build", outfile));
+                                    outfiles[file] = outfile;
+                                    _resolve(null);
+                                }
+                            });
+                        } else {
+                            const target = pathJoin(workspace, "./tmp/js", file);
+                            const hash_js = createHash("md5");
+                            hash_js.update(readFileSync(target));
+                            let outfile = hash_js.digest("hex") + ".js";
+                            copyFileSync(target, pathJoin(workspace, "./build", outfile));
+                            outfiles[file] = outfile;
+                            _resolve(null);
+                        }
+                    });
+                })).then(() => {
+                    console.timeEnd("TypeScript build time");
+                    resolve(outfiles);
+                }).catch(reject);
+            }
+        });
+    });
+}
+
+export const TailwindCompile = (RELEASE: boolean, workspace: string, wait = false): string | Promise<string> => {
+    if (wait) {
+        console.time("Tailwind CSS build time");
+        const target = pathJoin(workspace, "./tmp/page.tailwind.css");
+        const command = `npx tailwindcss --input ${pathJoin(workspace, './src/tailwind-directives.css')} --output ${target} --config ${pathJoin(workspace, './tailwind.config.js')}${RELEASE ? ' --minify' : ''}`;
+        try {
+            execSync(command, { stdio: "ignore" });
+        } catch(error) {
+            throw error;
+        }
+        const hash_css = createHash("md5");
+        hash_css.update(readFileSync(target));
+        let css_name = hash_css.digest("hex") + ".css";
+        copyFileSync(target, pathJoin(workspace, "./build", css_name));
+        console.timeEnd("Tailwind CSS build time");
+        return css_name;
+    } else {
+        return new Promise<string>((resolve, reject) => {
             console.time("Tailwind CSS build time");
             const target = pathJoin(workspace, "./tmp/page.tailwind.css");
             const command = `npx tailwindcss --input ${pathJoin(workspace, './src/tailwind-directives.css')} --output ${target} --config ${pathJoin(workspace, './tailwind.config.js')}${RELEASE ? ' --minify' : ''}`;
@@ -90,7 +105,6 @@ export const Compile = (RELEASE: boolean, workspace: string): CompilePromiseCons
                 if (error) {
                     reject(error);
                 } else {
-                    if (stdout) { console.log(stdout) }
                     const hash_css = createHash("md5");
                     hash_css.update(readFileSync(target));
                     let css_name = hash_css.digest("hex") + ".css";
@@ -99,35 +113,52 @@ export const Compile = (RELEASE: boolean, workspace: string): CompilePromiseCons
                     resolve(css_name);
                 }
             });
-        }),
-        new Promise<CheerioAPI>((resolve, reject) => {
-            console.time("HTML load & replace (__replace attribute) time");
-    
-            const $ = HTMLLoad(readFileSync(pathJoin(workspace, "./src/page.html")));
-    
-            for (const __element of $(".__BUILD_replace")) {
-                const element = $(__element);
-                const __replace = element.attr("__replace");
-                if (__replace) {
-                    try {
-                        let spilt_point = __replace.indexOf("=");
-                        element.attr(__replace.slice(0, spilt_point), __replace.slice(spilt_point + 1));
-                        element.removeClass("__BUILD_replace");
-                        if (element.attr("class") == "") {
-                            element.removeAttr("class");
-                        }
-                    } catch {
-                        reject(new Error("__BUILD_replace: replace error"))
+        });
+    }
+}
+
+export const HTMLLoader = (workspace: string) => {
+    return new Promise<CheerioAPI>((resolve, reject) => {
+        console.time("HTML load & replace (__replace attribute) time");
+        const $ = HTMLLoad(readFileSync(pathJoin(workspace, "./src/page.html")));
+        for (const __element of $(".__BUILD_replace")) {
+            const element = $(__element);
+            const __replace = element.attr("__replace");
+            if (__replace) {
+                try {
+                    let spilt_point = __replace.indexOf("=");
+                    element.attr(__replace.slice(0, spilt_point), __replace.slice(spilt_point + 1));
+                    element.removeClass("__BUILD_replace");
+                    if (element.attr("class") == "") {
+                        element.removeAttr("class");
                     }
-                } else {
-                    reject(new Error("__BUILD_replace: replace error, __replace attribute not found"));
+                } catch {
+                    reject(new Error("__BUILD_replace: replace error"))
                 }
+            } else {
+                reject(new Error("__BUILD_replace: replace error, __replace attribute not found"));
             }
-    
-            console.timeEnd("HTML load & replace (__replace attribute) time");
-            resolve($);
-        })
+        }
+        console.timeEnd("HTML load & replace (__replace attribute) time");
+        resolve($);
+    });
+}
+
+export const AsyncCompile = (RELEASE: boolean, workspace: string): AsyncCompilePromiseConstructor => {
+    return Promise.all([
+        TSCompile(RELEASE, workspace),
+        TailwindCompile(RELEASE, workspace),
+        HTMLLoader(workspace),
     ]);
+}
+
+export const Compile = (RELEASE: boolean, workspace: string): CompilePromiseConstructor => {
+    return Promise.all([
+        TSCompile(RELEASE, workspace),
+        HTMLLoader(workspace),
+    ]).then((results) => {
+        return [results[0], TailwindCompile(RELEASE, workspace, true) as string, results[1]];
+    });
 }
 
 export const ERROR_PAGE = (RELEASE: boolean, workspace: string) => {
@@ -191,4 +222,4 @@ export const ERROR_PAGE = (RELEASE: boolean, workspace: string) => {
 
 export const Target = {
     ERROR_PAGE
-};
+}
