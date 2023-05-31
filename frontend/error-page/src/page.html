@@ -7,7 +7,7 @@
         <link class="__BUILD_tailwindcss" href="../tmp/page.tailwind.css" rel="stylesheet">
         <title>ERROR PAGE</title>
     </head>
-    <body class="bg-red-50 m-10 break-all font-mono">
+    <body class="bg-red-50 m-10 font-mono">
         <div class="flex flex-row items-center ml-5">
             <div class="text-[160px] font-thin -mt-12 tracking-widest whitespace-nowrap select-none font-sans">:(</div>
             <div class="ml-10">
@@ -35,11 +35,10 @@
                 </tr>
             </table>
             <div class="whitespace-nowrap w-full mt-3">
-                <div class="inline-block align-top" >URL:&nbsp;</div>
-                <div class="inline-block whitespace-normal break-all w-auto" id="URL"></div>
+                <div class="inline-block align-top" >URL:&nbsp;</div><div class="inline-block whitespace-normal break-all" id="URL"></div>
             </div>
             <p>Your IP: <span id="your-ip"><!--#echo var="remote_addr" --></span></p>
-            <p>Ray ID: <span id="your-ip"><!--#echo var="http_cf_ray" --></span></p>
+            <p>Ray ID: <span id="ray-id"><!--#echo var="http_cf_ray" --></span> (<span id="ray-id-detail"></span>)</p>
         </div>
         <script class="__BUILD_javascript" src="../tmp/js/page.js"></script>
     </body>
