@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSync, existsSync, renameSync, lstatSync, unlinkSync, rmdirSync, mkdir } from "node:fs";
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, readdirSync, existsSync, renameSync, lstatSync, unlinkSync, rmdirSync } from "node:fs";
 import { join as pathJoin, basename } from "node:path";
 import { exec, execSync } from "node:child_process";
 import { chdir, cwd } from "node:process";
@@ -163,9 +163,9 @@ export const Compile = (RELEASE: boolean, workspace: string): CompilePromiseCons
 
 export const ERROR_PAGE = (RELEASE: boolean, workspace: string) => {
     return (results: CompileResults) => {
-        const PWD = cwd();
-        chdir(workspace)
         console.time("HTML replace source link time");
+        const PWD = cwd();
+        chdir(workspace);
         const [js_files, css_name, $] = results;
 
         let from = "/";

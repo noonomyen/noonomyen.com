@@ -12,17 +12,18 @@ if (argv.indexOf("--release") != -1) {
     RELEASE = true;
 }
 
-if (argv.indexOf("target->error-page") != -1) {
-    const workspace = "../../../error-page";
+const workspace = ".";
+
+if (argv.indexOf("ts-wait") != -1) {
+    Core.setupBuildDir(workspace);
+    Core.Compile(RELEASE, workspace)
+        .then(Core.Target.ERROR_PAGE(RELEASE, workspace))
+        .then(end)
+        .catch(error);
+} else {
     Core.setupBuildDir(workspace);
     Core.AsyncCompile(RELEASE, workspace)
         .then(Core.Target.ERROR_PAGE(RELEASE, workspace))
         .then(end)
         .catch(error);
-} else {
-    console.log(`build.ts [target->] [option]
-target:
-    target->error-page    -- /frontend/error-page
-option:
-    --release             -- replace src link and minify`);
 }
