@@ -10,7 +10,6 @@
     "skipLibCheck": true
   },
   "files": [
-    "./core.ts",
     "./build.ts"
   ]
 }
