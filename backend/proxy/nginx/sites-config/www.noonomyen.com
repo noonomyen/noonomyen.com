@@ -1,7 +1,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name wwww.noonomyen.com;
+    server_name www.noonomyen.com;
 
     return 301 https://noonomyen.com$request_uri;
 }
